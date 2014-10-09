@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type='text/xsl' href='_UpgradeReport_Files/UpgradeReport.xslt'?><UpgradeLog>
+<Properties><Property Name="Solution" Value="Pool Game">
+</Property><Property Name="Solution File" Value="C:\Users\XiaoYang\Downloads\Pool Game v1.0\Pool Game.sln">
+</Property><Property Name="User Options File" Value="C:\Users\XiaoYang\Downloads\Pool Game v1.0\Pool Game.suo">
+</Property><Property Name="Date" Value="2014年10月9日">
+</Property><Property Name="Time" Value="23:35">
+</Property></Properties><Event ErrorLevel="0" Project="" Source="Pool Game.sln" Description="File successfully backed up as C:\Users\XiaoYang\Downloads\Pool Game v1.0\Pool Game.sln.old">
+</Event><Event ErrorLevel="0" Project="" Source="Pool Game.suo" Description="File successfully backed up as C:\Users\XiaoYang\Downloads\Pool Game v1.0\Pool Game.suo.old">
+</Event><Event ErrorLevel="0" Project="Pool Game" Source="Pool Game.vcproj" Description="Converting project file 'C:\Users\XiaoYang\Downloads\Pool Game v1.0\Pool Game.vcproj'.">
+</Event><Event ErrorLevel="1" Project="Pool Game" Source="Pool Game.vcproj" Description="VCWebServiceProxyGeneratorTool is no longer supported. The tool has been removed from your project settings.">
+</Event><Event ErrorLevel="0" Project="Pool Game" Source="Pool Game.vcproj" Description="Done converting to new project file 'C:\Users\XiaoYang\Downloads\Pool Game v1.0\Pool Game.vcxproj'.">
+</Event><Event ErrorLevel="3" Project="Pool Game" Source="Pool Game.vcproj" Description="Converted">
+</Event><Event ErrorLevel="0" Project="" Source="Pool Game.sln" Description="Solution converted successfully">
+</Event><Event ErrorLevel="3" Project="" Source="Pool Game.sln" Description="Converted">
+</Event></UpgradeLog>
