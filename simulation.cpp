@@ -77,13 +77,14 @@ void ball::ApplyFrictionForce(int ms)
 	else velocity += velocityChange;
 }
 
-void ball::DoPlaneCollisions(void)
+void ball::DoPlaneCollisions(cushion* c)
 {
 	//test each plane for collision
-	if(HasHitPlane1()) HitPlane1();
-	if(HasHitPlane2()) HitPlane2();
-	if(HasHitPlane3()) HitPlane3();
-	if(HasHitPlane4()) HitPlane4();
+	for(int i=0;i<NUM_CUSHION;i++){
+		if(HasHitPlane(*(c+i))){ 
+			HitPlane(*(c+i));
+		}
+	}
 }
 
 void ball::DoBallCollision(ball &b)
@@ -101,35 +102,15 @@ void ball::Update(int ms)
 	if(velocity.Magnitude()<SMALL_VELOCITY) velocity = 0.0;
 }
 
-bool ball::HasHitPlane1(void) const
+bool ball::HasHitPlane(cushion &c) const
 {
 	//if moving away from plane, cannot hit
-	if(velocity(0) >= 0.0) return false;
+	if(velocity.Dot(c.normal) >= 0.0 ) return false;
 	//if in front of plane, then have not hit
-	if((position(0)-radius) > (-TABLE_X)) return false;
+	if((position-(c.end)).Dot(c.normal) > 0) return false;
 	return true;
 }
 
-bool ball::HasHitPlane2(void) const
-{
-	if(velocity(1) >= 0.0) return false;
-	if((position(1)-radius) > (-TABLE_Z)) return false;
-	return true;
-}
-
-bool ball::HasHitPlane3(void) const
-{
-	if(velocity(0) <= 0.0) return false;
-	if((position(0)+radius) < (TABLE_X)) return false;
-	return true;
-}
-
-bool ball::HasHitPlane4(void) const
-{
-	if(velocity(1) <= 0.0) return false;
-	if((position(1)+radius) < (TABLE_Z)) return false;
-	return true;
-}
 
 bool ball::HasHitBall(const ball &b) const
 {
@@ -148,11 +129,11 @@ bool ball::HasHitBall(const ball &b) const
 	return true;
 }
 
-void ball::HitPlane1(void)
+void ball::HitPlane(cushion &c)
 {
 	//assume elastic collision
 	//find plane normal
-	vec2 planeNorm = gPlaneNormal_Left;
+	vec2 planeNorm = c.normal;
 	//split velocity into 2 components:
 	//find velocity component perpendicular to plane
 	vec2 perp = planeNorm*(velocity.Dot(planeNorm));
@@ -163,29 +144,6 @@ void ball::HitPlane1(void)
 	velocity = parallel + (-perp)*gCoeffRestitution;
 }
 
-void ball::HitPlane2(void)
-{
-	vec2 planeNorm = gPlaneNormal_Top;
-	vec2 perp = planeNorm*(velocity.Dot(planeNorm));
-	vec2 parallel = velocity - perp;
-	velocity = parallel + (-perp)*gCoeffRestitution;
-}
-
-void ball::HitPlane3(void)
-{
-	vec2 planeNorm = gPlaneNormal_Right;
-	vec2 perp = planeNorm*(velocity.Dot(planeNorm));
-	vec2 parallel = velocity - perp;
-	velocity = parallel + (-perp)*gCoeffRestitution;
-}
-
-void ball::HitPlane4(void)
-{
-	vec2 planeNorm = gPlaneNormal_Bottom;
-	vec2 perp = planeNorm*(velocity.Dot(planeNorm));
-	vec2 parallel = velocity - perp;
-	velocity = parallel + (-perp)*gCoeffRestitution;
-}
 
 void ball::HitBall(ball &b)
 {
@@ -218,7 +176,7 @@ void ball::HitBall(ball &b)
 void table::Update(int ms)
 {
 	//check for collisions with planes, for all balls
-	for(int i=0;i<NUM_BALLS;i++) balls[i].DoPlaneCollisions();
+	for(int i=0;i<NUM_BALLS;i++) balls[i].DoPlaneCollisions(cushions);
 	
 	//check for collisions between pairs of balls
 	for(int i=0;i<NUM_BALLS;i++) 
@@ -242,4 +200,22 @@ bool table::AnyBallsMoving(void) const
 		if(balls[i].velocity(1)!=0.0) return true;
 	}
 	return false;
+}
+
+/*-----------------------------------------------------------
+  cushion class members
+  -----------------------------------------------------------*/
+vec2 cushion::GetNormal(void)
+{
+	vec2 line = start - end;
+	return vec2(line.elem[1], -line.elem[0]);
+}
+
+void cushion::SetPosition(double start_x, double start_y, double end_x, double end_y)
+{	
+	vec2 s(start_x, start_y);
+	vec2 e(end_x, end_y);
+	assert( s != e );
+	start = s, end = e;
+	normal = GetNormal().Normalised();
 }

@@ -2,7 +2,6 @@
 //
 
 #include "stdafx.h"
-#include "stdafx.h"
 #include<glut.h>
 #include<math.h>
 #include"simulation.h"
@@ -152,30 +151,16 @@ void RenderScene(void) {
 	//draw the table
 	glPushMatrix();
 	
-	glBegin(GL_LINE_LOOP);
-	glVertex3f (-TABLE_X, 0.0, -TABLE_Z);
-	glVertex3f (-TABLE_X, 0.1, -TABLE_Z);
-	glVertex3f (-TABLE_X, 0.1, TABLE_Z);
-	glVertex3f (-TABLE_X, 0.0, TABLE_Z);
-	glEnd();
-	glBegin(GL_LINE_LOOP);
-	glVertex3f (TABLE_X, 0.0, -TABLE_Z);
-	glVertex3f (TABLE_X, 0.1, -TABLE_Z);
-	glVertex3f (TABLE_X, 0.1, TABLE_Z);
-	glVertex3f (TABLE_X, 0.0, TABLE_Z);
-	glEnd();
-	glBegin(GL_LINE_LOOP);
-	glVertex3f (TABLE_X, 0.0, -TABLE_Z);
-	glVertex3f (TABLE_X, 0.1, -TABLE_Z);
-	glVertex3f (-TABLE_X, 0.1, -TABLE_Z);
-	glVertex3f (-TABLE_X, 0.0, -TABLE_Z);
-	glEnd();
-	glBegin(GL_LINE_LOOP);
-	glVertex3f (TABLE_X, 0.0, TABLE_Z);
-	glVertex3f (TABLE_X, 0.1, TABLE_Z);
-	glVertex3f (-TABLE_X, 0.1, TABLE_Z);
-	glVertex3f (-TABLE_X, 0.0, TABLE_Z);
-	glEnd();
+	for(int i=0;i<NUM_CUSHION;i++){
+		glBegin(GL_LINE_LOOP);
+		vec2 cushion_start = gTable.cushions[i].start;
+		vec2 cushion_end = gTable.cushions[i].end;
+		glVertex3f(cushion_start.elem[0], 0.0, cushion_start.elem[1]);
+		glVertex3f(cushion_start.elem[0], 0.1, cushion_start.elem[1]);
+		glVertex3f(cushion_end.elem[0], 0.1, cushion_end.elem[1]);
+		glVertex3f(cushion_end.elem[0], 0.0, cushion_end.elem[1]);
+		glEnd();
+	}
 
 	//draw the cue
 	if(gDoCue)
@@ -419,6 +404,16 @@ void UpdateScene(int ms)
 	glutTimerFunc(SIM_UPDATE_MS, UpdateScene, SIM_UPDATE_MS);
 	glutPostRedisplay();
 }
+
+/*
+int _tmain(int argc, _TCHAR* argv[]){
+	vec2 a1(-5,3);
+	vec2 a2(5, 3);
+	cushion c(a1, a2);
+	std::cout << c.normal.elem[0] << c.normal.elem[1];
+}
+*/
+
 
 int _tmain(int argc, _TCHAR* argv[])
 {

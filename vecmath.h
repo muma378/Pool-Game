@@ -32,6 +32,7 @@ public:
     vec2 &operator +=(const vec2 &x) {elem[0]+=x.elem[0]; elem[1]+=x.elem[1]; return (*this);}
     vec2 &operator -=(const vec2 &x) {elem[0]-=x.elem[0]; elem[1]-=x.elem[1]; return (*this);}
     bool operator ==(const vec2 &x) const {return((elem[0] == x.elem[0])&&(elem[1] == x.elem[1]));}
+	bool operator !=(const vec2 &x) const {return((elem[0] != x.elem[0])||(elem[1] != x.elem[1]));}
 
     double Magnitude(void) const {return(sqrt((elem[0]*elem[0])+(elem[1]*elem[1])));}
     double Magnitude2(void) const {return((elem[0]*elem[0])+(elem[1]*elem[1]));}
@@ -39,7 +40,9 @@ public:
     vec2 Normalised(void) const {vec2 res(*this); res.Normalise(); return res;}
 
     double Dot(const vec2 &x) const {return ( (elem[0]*x.elem[0]) + (elem[1]*x.elem[1]) );}
+
 };
+
 
 /*------------------------------------------------------------------------
 	vec3 : 3d Vector

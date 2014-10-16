@@ -1,6 +1,7 @@
 /*-----------------------------------------------------------
   Simulation Header File
   -----------------------------------------------------------*/
+#include <assert.h>
 #include"vecmath.h"
 
 /*-----------------------------------------------------------
@@ -13,6 +14,7 @@
 #define TWO_PI			(6.2832f)
 #define	SIM_UPDATE_MS	(10)
 #define NUM_BALLS		(7)		
+#define NUM_CUSHION		(4)
 
 /*-----------------------------------------------------------
   plane normals
@@ -21,6 +23,21 @@ extern vec2	gPlaneNormal_Left;
 extern vec2	gPlaneNormal_Top;
 extern vec2	gPlaneNormal_Right;
 extern vec2	gPlaneNormal_Bottom;
+
+/*-----------------------------------------------------------
+  cushion class
+  -----------------------------------------------------------*/
+class cushion
+{
+public:
+	vec2 start;
+	vec2 end;
+	vec2 normal; 
+
+	cushion(){};
+	void SetPosition(double start_x, double start_y, double end_x, double end_y);
+	vec2 GetNormal(void);
+};
 
 /*-----------------------------------------------------------
   ball class
@@ -42,20 +59,14 @@ public:
 	void Reset(void);
 	void ApplyImpulse(vec2 imp);
 	void ApplyFrictionForce(int ms);
-	void DoPlaneCollisions(void);
+	void DoPlaneCollisions(cushion* c);
 	void DoBallCollision(ball &b);
 	void Update(int ms);
 	
-	bool HasHitPlane1(void) const;
-	bool HasHitPlane2(void) const;
-	bool HasHitPlane3(void) const;
-	bool HasHitPlane4(void) const;
+	bool HasHitPlane(cushion &c) const;
 	bool HasHitBall(const ball &b) const;
 
-	void HitPlane1(void);
-	void HitPlane2(void);
-	void HitPlane3(void);
-	void HitPlane4(void);
+	void HitPlane(cushion &c);
 	void HitBall(ball &b);
 };
 
@@ -66,9 +77,18 @@ class table
 {
 public:
 	ball balls[NUM_BALLS];	
+	cushion cushions[NUM_CUSHION];
+	table(){	
+		cushions[0].SetPosition(TABLE_X, TABLE_Z, -TABLE_X, TABLE_Z);
+		cushions[1].SetPosition(-TABLE_X, TABLE_Z, -TABLE_X, -TABLE_Z);
+		cushions[2].SetPosition(-TABLE_X, -TABLE_Z, TABLE_X, -TABLE_Z);
+		cushions[3].SetPosition(TABLE_X, -TABLE_Z, TABLE_X, TABLE_Z);
+	}
 	void Update(int ms);	
 	bool AnyBallsMoving(void) const;
 };
+
+
 
 /*-----------------------------------------------------------
   global table
