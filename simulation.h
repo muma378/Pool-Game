@@ -14,7 +14,7 @@
 #define TWO_PI			(6.2832f)
 #define	SIM_UPDATE_MS	(10)
 #define NUM_BALLS		(7)		
-#define NUM_CUSHION		(4)
+#define NUM_CUSHION		(5)
 
 /*-----------------------------------------------------------
   plane normals
@@ -80,9 +80,10 @@ public:
 	cushion cushions[NUM_CUSHION];
 	table(){	
 		cushions[0].SetPosition(TABLE_X, TABLE_Z, -TABLE_X, TABLE_Z);
-		cushions[1].SetPosition(-TABLE_X, TABLE_Z, -TABLE_X, -TABLE_Z);
-		cushions[2].SetPosition(-TABLE_X, -TABLE_Z, TABLE_X, -TABLE_Z);
-		cushions[3].SetPosition(TABLE_X, -TABLE_Z, TABLE_X, TABLE_Z);
+		cushions[1].SetPosition(-TABLE_X, TABLE_Z, -TABLE_X, 0.0);
+		cushions[2].SetPosition(-TABLE_X, 0.0, 0.0, -TABLE_Z);
+		cushions[3].SetPosition(0.0, -TABLE_Z, TABLE_X, -TABLE_Z);
+		cushions[4].SetPosition(TABLE_X, -TABLE_Z, TABLE_X, TABLE_Z);
 	}
 	void Update(int ms);	
 	bool AnyBallsMoving(void) const;
