@@ -88,7 +88,27 @@ public:
 	bool AnyBallsMoving(void) const;
 };
 
+/*----------------------------------------------------------
+  particle class
+ ----------------------------------------------------------*/
 
+class particle
+{
+	static int particleIndexCnt;
+private:
+	float radius;
+	vec3 velocity;
+	vec3 position;
+	int index;
+public:
+	particle(vec2 start_pos){
+		position(0) = BALL_RADIUS;
+		position(1) = start_pos(0);
+		position(2) = start_pos(1);
+	}
+
+
+};
 
 /*-----------------------------------------------------------
   global table

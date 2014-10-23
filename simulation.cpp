@@ -107,7 +107,7 @@ bool ball::HasHitPlane(cushion &c) const
 	//if moving away from plane, cannot hit
 	if(velocity.Dot(c.normal) >= 0.0 ) return false;
 	//if in front of plane, then have not hit
-	if((position-(c.end)).Dot(c.normal) > 0) return false;
+	if((position-(c.end)).Dot(c.normal) > radius) return false;
 	return true;
 }
 

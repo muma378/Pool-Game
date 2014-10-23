@@ -405,15 +405,6 @@ void UpdateScene(int ms)
 	glutPostRedisplay();
 }
 
-/*
-int _tmain(int argc, _TCHAR* argv[]){
-	vec2 a1(-5,3);
-	vec2 a2(5, 3);
-	cushion c(a1, a2);
-	std::cout << c.normal.elem[0] << c.normal.elem[1];
-}
-*/
-
 
 int _tmain(int argc, _TCHAR* argv[])
 {
