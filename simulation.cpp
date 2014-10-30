@@ -83,13 +83,17 @@ void ball::DoPlaneCollisions(cushion* c)
 	for(int i=0;i<NUM_CUSHION;i++){
 		if(HasHitPlane(*(c+i))){ 
 			HitPlane(*(c+i));
+			particleSet particles(this->CollisionPos(*(c+i)));
 		}
 	}
 }
 
 void ball::DoBallCollision(ball &b)
 {
-	if(HasHitBall(b)) HitBall(b);
+	if(HasHitBall(b)){
+		HitBall(b);
+		this->CollisionPos(b);
+	}
 }
 
 void ball::Update(int ms)
@@ -170,6 +174,26 @@ void ball::HitBall(ball &b)
 	b.velocity = parallelV2 + (relDir*perpVNew2);
 }
 
+vec2 ball::CollisionPos(const ball &b) const
+{
+	return position.MiddlePlace(b.position);
+}
+
+vec2 ball::CollisionPos(const cushion &c) const
+{
+	//the vector of cushion, (P2-P1)
+	vec2 plane = c.start - c.end;
+	//the vector of sphere center to cushion's end, (P3-P1)
+	vec2 ball_to_end = position - c.end;	
+	//the rate of projected point to cushion's end over cushion'start to end
+	//LET k = |P0-P1|/|P2-P1|
+	//k = (P3-P1)*(P2-P1)/|P2-P1|
+	double k = ball_to_end.Dot(plane)/plane.Magnitude();
+	//P0 = (P2-P1)/k + P1
+	return plane/k + c.end;
+
+}
+
 /*-----------------------------------------------------------
   table class members
   -----------------------------------------------------------*/
@@ -219,3 +243,14 @@ void cushion::SetPosition(double start_x, double start_y, double end_x, double e
 	start = s, end = e;
 	normal = GetNormal().Normalised();
 }
+
+/*-----------------------------------------------------------
+  particle class members
+  -----------------------------------------------------------*/
+int particle::particleIndexCnt = 0;
+
+void particle::Reset(const vec2 start_pos){
+		position = vec3(start_pos(0), start_pos(1), radius);
+		velocity = vec3(random_speed(), random_speed(), random_speed());
+	};
+

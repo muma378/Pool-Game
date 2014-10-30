@@ -2,9 +2,9 @@
 //
 
 #include "stdafx.h"
-#include<glut.h>
 #include<math.h>
 #include"simulation.h"
+#include<glut.h>
 
 //cue variables
 float gCueAngle = 0.0;

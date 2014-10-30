@@ -38,6 +38,7 @@ public:
     double Magnitude2(void) const {return((elem[0]*elem[0])+(elem[1]*elem[1]));}
     double Normalise(void) { double x = Magnitude(); elem[0]/=x; elem[1]/=x; return x;}
     vec2 Normalised(void) const {vec2 res(*this); res.Normalise(); return res;}
+	vec2 MiddlePlace(const vec2 &x) const {vec2 res(*this); res = (res + x)/2; return res; }
 
     double Dot(const vec2 &x) const {return ( (elem[0]*x.elem[0]) + (elem[1]*x.elem[1]) );}
 
@@ -56,6 +57,7 @@ public:
     vec3(){}
     vec3(double x, double y, double z){elem[0]=x; elem[1]=y;elem[2]=z;}
     vec3(double x){elem[0]=elem[1]=elem[2]=x;}
+
 
     double operator()(int x) const {return elem[x];}
     double &operator()(int x) {return elem[x];}

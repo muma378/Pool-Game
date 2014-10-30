@@ -3,6 +3,8 @@
   -----------------------------------------------------------*/
 #include <assert.h>
 #include"vecmath.h"
+#include <time.h>
+#include <stdlib.h>
 
 /*-----------------------------------------------------------
   Macros
@@ -15,6 +17,9 @@
 #define	SIM_UPDATE_MS	(10)
 #define NUM_BALLS		(7)		
 #define NUM_CUSHION		(4)
+#define MAX_PARTICLES	(100)
+#define MIN_PARTICLES	(20)
+#define MAX_SPEED		(50)
 
 /*-----------------------------------------------------------
   plane normals
@@ -34,7 +39,6 @@ public:
 	vec2 end;
 	vec2 normal; 
 
-	cushion(){};
 	void SetPosition(double start_x, double start_y, double end_x, double end_y);
 	vec2 GetNormal(void);
 };
@@ -68,6 +72,9 @@ public:
 
 	void HitPlane(cushion &c);
 	void HitBall(ball &b);
+
+	vec2 CollisionPos(const ball &b) const;
+	vec2 CollisionPos(const cushion &c) const;
 };
 
 /*-----------------------------------------------------------
@@ -100,13 +107,39 @@ private:
 	vec3 velocity;
 	vec3 position;
 	int index;
+	bool visible;
+
 public:
-	particle(vec2 start_pos){
-		position(0) = BALL_RADIUS;
-		position(1) = start_pos(0);
-		position(2) = start_pos(1);
+	particle():radius(BALL_RADIUS), visible(true){
+		index = particleIndexCnt++;
+	};
+
+	static int random_speed(){
+		return rand() % MAX_SPEED;
+	}
+	void Reset(const vec2);
+	
+};
+
+
+class particleSet
+{
+private:
+	particle *particle_set;
+
+public:
+	particleSet(vec2 start_pos){
+		srand(time(NULL));
+		int particle_num = rand()%(MAX_PARTICLES - MIN_PARTICLES) + MIN_PARTICLES;
+		particle_set = new particle[particle_num];
+		for(int i=0;i<particle_num;i++){
+			particle_set[i].Reset(start_pos);
+		}
 	}
 
+	~particleSet(){
+		delete[] particle_set;
+	};
 
 };
 
