@@ -17,9 +17,11 @@
 #define	SIM_UPDATE_MS	(10)
 #define NUM_BALLS		(7)		
 #define NUM_CUSHION		(4)
-#define MAX_PARTICLES	(100)
-#define MIN_PARTICLES	(20)
-#define MAX_SPEED		(50)
+#define MAX_PARTICLES	(10)
+#define MIN_PARTICLES	(2)
+#define MAX_SPEED		(5)
+#define PARTICLE_SET_SCALE	(2)
+#define PARTICLE_RADIUS	(0.001f)
 
 /*-----------------------------------------------------------
   plane normals
@@ -43,6 +45,61 @@ public:
 	vec2 GetNormal(void);
 };
 
+/*----------------------------------------------------------
+  particle class
+ ----------------------------------------------------------*/
+
+class particle
+{
+	static int particleIndexCnt;
+private:
+	int index;
+	vec3 velocity;
+	 
+public:
+	vec3 position;
+	float radius;
+	bool visible;
+
+	particle():radius(PARTICLE_RADIUS), visible(true){
+		index = particleIndexCnt++;
+	};
+
+	static int random_speed(){
+		return rand() % MAX_SPEED;
+	}
+	void Disappear(){ visible = false; }
+	void Reset(const vec2);
+	void ApplyGravity(int ms);
+	void Update(int ms);
+	bool HaveCollision();
+
+};
+
+
+class particleSet
+{	
+private:
+	bool visible;
+	int size;
+	int particle_index;
+	int invisible_num;
+
+public:
+	particle *particles;
+
+	particleSet():visible(true),size(0), invisible_num(0){};
+	void Initial(vec2 start_pos);
+	
+	void ParticleIteratorBegin(){ particle_index = 0; }
+	bool HasNextParticle();
+	particle GetNextParticle();
+
+	int GetSize(){ return size;}
+	bool AllInvisible(){ return !visible; }
+};
+
+
 /*-----------------------------------------------------------
   ball class
   -----------------------------------------------------------*/
@@ -50,15 +107,21 @@ public:
 class ball
 {
 	static int ballIndexCnt;
+private:
+	static int particle_set_num;
+	static int particle_set_index;
+
 public:
 	vec2	position;
 	vec2	velocity;
 	float	radius;
 	float	mass;
 	int		index;
+	
+	static particleSet *particle_sets;
 
 	ball(): position(0.0), velocity(0.0), radius(BALL_RADIUS), 
-		mass(BALL_MASS) {index = ballIndexCnt++; Reset();}
+		mass(BALL_MASS){index = ballIndexCnt++; Reset();}
 	
 	void Reset(void);
 	void ApplyImpulse(vec2 imp);
@@ -75,7 +138,13 @@ public:
 
 	vec2 CollisionPos(const ball &b) const;
 	vec2 CollisionPos(const cushion &c) const;
+	void Firework(vec2 position);
+	static int GetParticleSetSize(){ return particle_set_index; }
+	void ParticleSetBegin();
+	bool HasNextParticleSet();
+	particleSet GetNextParticleSet();
 };
+
 
 /*-----------------------------------------------------------
   table class
@@ -85,63 +154,18 @@ class table
 public:
 	ball balls[NUM_BALLS];	
 	cushion cushions[NUM_CUSHION];
+
 	table(){	
 		cushions[0].SetPosition(TABLE_X, TABLE_Z, -TABLE_X, TABLE_Z);
 		cushions[1].SetPosition(-TABLE_X, TABLE_Z, -TABLE_X, -TABLE_Z);
 		cushions[2].SetPosition(-TABLE_X, -TABLE_Z, TABLE_X, -TABLE_Z);
 		cushions[3].SetPosition(TABLE_X, -TABLE_Z, TABLE_X, TABLE_Z);
 	}
+	
 	void Update(int ms);	
 	bool AnyBallsMoving(void) const;
 };
 
-/*----------------------------------------------------------
-  particle class
- ----------------------------------------------------------*/
-
-class particle
-{
-	static int particleIndexCnt;
-private:
-	float radius;
-	vec3 velocity;
-	vec3 position;
-	int index;
-	bool visible;
-
-public:
-	particle():radius(BALL_RADIUS), visible(true){
-		index = particleIndexCnt++;
-	};
-
-	static int random_speed(){
-		return rand() % MAX_SPEED;
-	}
-	void Reset(const vec2);
-	
-};
-
-
-class particleSet
-{
-private:
-	particle *particle_set;
-
-public:
-	particleSet(vec2 start_pos){
-		srand(time(NULL));
-		int particle_num = rand()%(MAX_PARTICLES - MIN_PARTICLES) + MIN_PARTICLES;
-		particle_set = new particle[particle_num];
-		for(int i=0;i<particle_num;i++){
-			particle_set[i].Reset(start_pos);
-		}
-	}
-
-	~particleSet(){
-		delete[] particle_set;
-	};
-
-};
 
 /*-----------------------------------------------------------
   global table

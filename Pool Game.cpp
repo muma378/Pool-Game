@@ -131,6 +131,24 @@ void RenderScene(void) {
 	//set camera
 	glLoadIdentity();
 	gluLookAt(gCamPos(0),gCamPos(1),gCamPos(2),gCamLookAt(0),gCamLookAt(1),gCamLookAt(2),0.0f,1.0f,0.0f);
+	/*
+	//draw the particles
+	glColor3f(1.0,0.0,0.0);
+	particle p;
+	for(int i=0;i<ball::GetParticleSetSize();i++){
+		particleSet ps=ball::particle_sets[i];
+		for(ps.ParticleIteratorBegin();ps.HasNextParticle();p=ps.GetNextParticle()){
+			glPushMatrix();
+			glTranslatef(p.position(0), p.position(1), p.position(2));
+			#if   DRAW_SOLID
+			glutSolidSphere(p.radius,32,32);
+			#else
+			glutWireSphere(p.radius,12,12);
+			#endif
+			glPopMatrix();
+		}
+	}
+	*/
 
 	//draw the ball
 	glColor3f(1.0,1.0,1.0);
@@ -138,7 +156,7 @@ void RenderScene(void) {
 	{
 		glPushMatrix();
 		glTranslatef(gTable.balls[i].position(0),(BALL_RADIUS/2.0),gTable.balls[i].position(1));
-		#if DRAW_SOLID
+		#if   DRAW_SOLID
 		glutSolidSphere(gTable.balls[i].radius,32,32);
 		#else
 		glutWireSphere(gTable.balls[i].radius,12,12);

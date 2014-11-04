@@ -3,7 +3,8 @@
   -----------------------------------------------------------*/
 #include"stdafx.h"
 #include"simulation.h"
-
+#include <iostream>
+using namespace std;
 /*-----------------------------------------------------------
   macros
   -----------------------------------------------------------*/
@@ -29,6 +30,9 @@ float gGravityAccn = 9.8f;
   ball class members
   -----------------------------------------------------------*/
 int ball::ballIndexCnt = 0;
+int ball::particle_set_num = PARTICLE_SET_SCALE;
+int ball::particle_set_index = 0;
+particleSet *ball::particle_sets = new particleSet[particle_set_num];
 
 void ball::Reset(void)
 {
@@ -83,7 +87,7 @@ void ball::DoPlaneCollisions(cushion* c)
 	for(int i=0;i<NUM_CUSHION;i++){
 		if(HasHitPlane(*(c+i))){ 
 			HitPlane(*(c+i));
-			particleSet particles(this->CollisionPos(*(c+i)));
+			Firework(this->CollisionPos(*(c+i)));
 		}
 	}
 }
@@ -92,7 +96,7 @@ void ball::DoBallCollision(ball &b)
 {
 	if(HasHitBall(b)){
 		HitBall(b);
-		this->CollisionPos(b);
+		Firework(this->CollisionPos(b));
 	}
 }
 
@@ -194,6 +198,21 @@ vec2 ball::CollisionPos(const cushion &c) const
 
 }
 
+void ball::Firework(vec2 position)
+{	
+	if( particle_set_index>=particle_set_num ){
+		particle_set_num *= PARTICLE_SET_SCALE;
+		particleSet *temp_particles = new particleSet[particle_set_num];
+		cout << "Newed:" << particle_set_num <<endl;
+		memcpy(temp_particles, particle_sets, sizeof(particleSet)*particle_set_index);
+		delete [] particle_sets;
+		particle_sets = temp_particles;
+	};
+	particle_sets[particle_set_index++].Initial(position);
+	cout << "Firework happend " << particle_set_index <<endl;
+	//TODO: delete [] particles
+}
+
 /*-----------------------------------------------------------
   table class members
   -----------------------------------------------------------*/
@@ -226,6 +245,7 @@ bool table::AnyBallsMoving(void) const
 	return false;
 }
 
+
 /*-----------------------------------------------------------
   cushion class members
   -----------------------------------------------------------*/
@@ -250,7 +270,55 @@ void cushion::SetPosition(double start_x, double start_y, double end_x, double e
 int particle::particleIndexCnt = 0;
 
 void particle::Reset(const vec2 start_pos){
-		position = vec3(start_pos(0), start_pos(1), radius);
+		position = vec3(start_pos(0), start_pos(1), radius/2);
 		velocity = vec3(random_speed(), random_speed(), random_speed());
 	};
 
+void particle::ApplyGravity(int ms){
+	vec3 velocityChange(0.0f, -(gGravityAccn * ms)/1000.0f, 0.0f);
+	velocity += velocityChange;
+}
+
+bool particle::HaveCollision(){
+	if(position(1)<0) return true;	//touch the ground
+	//TODO:Add more disappear condition
+	
+}
+
+void particle::Update(int ms){
+	ApplyGravity(ms);
+	position += ((velocity * ms)/1000.0f);
+	if(HaveCollision()) Disappear();
+	else cout << index, position(0), position(1), position(2) <<endl;
+
+}
+
+void particleSet::Initial(vec2 start_pos){
+		srand(time(NULL));
+		size = rand()%(MAX_PARTICLES - MIN_PARTICLES) + MIN_PARTICLES;
+		cout << size << " particles are alocated." << endl;  
+		particles = new particle[size];
+		for(int i=0;i<size;i++){
+			particles[i].Reset(start_pos);
+		}
+	}
+
+bool particleSet::HasNextParticle(){
+	if(!visible) return false;
+	while(particle_index<size && !particles[particle_index].visible){
+		particle_index++;
+		invisible_num++;
+	}
+	if(invisible_num==size){
+		delete [] particles;
+		visible = false;
+		return false;
+	}
+	if(particle_index>=size) return false;
+
+	return true;
+}
+
+particle particleSet::GetNextParticle(){
+	return particles[particle_index];
+};
