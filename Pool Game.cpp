@@ -29,7 +29,7 @@ bool gCamU = false;
 bool gCamD = false;
 bool gCamZin = false;
 bool gCamZout = false;
-
+particleSetMgr* gParticleSetMgr = particleSetMgr::Instance();
 //rendering options
 #define DRAW_SOLID	(0)
 
@@ -131,24 +131,26 @@ void RenderScene(void) {
 	//set camera
 	glLoadIdentity();
 	gluLookAt(gCamPos(0),gCamPos(1),gCamPos(2),gCamLookAt(0),gCamLookAt(1),gCamLookAt(2),0.0f,1.0f,0.0f);
-	/*
+	
 	//draw the particles
-	glColor3f(1.0,0.0,0.0);
-	particle p;
-	for(int i=0;i<ball::GetParticleSetSize();i++){
-		particleSet ps=ball::particle_sets[i];
-		for(ps.ParticleIteratorBegin();ps.HasNextParticle();p=ps.GetNextParticle()){
+	particleSet* ps;
+	particle* p;
+	for(gParticleSetMgr->ParticleSetBegin();gParticleSetMgr->HasNextParticleSet();){
+		ps = gParticleSetMgr->GetNextParticleSet();
+		for(ps->ParticleIteratorBegin();ps->HasNextParticle();){
+			p = ps->GetNextParticle();
+			glColor3f(1.0,0.0,0.0);
 			glPushMatrix();
-			glTranslatef(p.position(0), p.position(1), p.position(2));
+			glTranslatef(p->position(0), p->position(1), p->position(2));
 			#if   DRAW_SOLID
 			glutSolidSphere(p.radius,32,32);
 			#else
-			glutWireSphere(p.radius,12,12);
+			glutWireSphere(p->radius,12,12);
 			#endif
 			glPopMatrix();
 		}
 	}
-	*/
+
 
 	//draw the ball
 	glColor3f(1.0,1.0,1.0);
@@ -418,6 +420,7 @@ void UpdateScene(int ms)
 	DoCamera(ms);
 
 	gTable.Update(ms);
+	gParticleSetMgr->Update(ms);
 
 	glutTimerFunc(SIM_UPDATE_MS, UpdateScene, SIM_UPDATE_MS);
 	glutPostRedisplay();

@@ -30,9 +30,6 @@ float gGravityAccn = 9.8f;
   ball class members
   -----------------------------------------------------------*/
 int ball::ballIndexCnt = 0;
-int ball::particle_set_num = PARTICLE_SET_SCALE;
-int ball::particle_set_index = 0;
-particleSet *ball::particle_sets = new particleSet[particle_set_num];
 
 void ball::Reset(void)
 {
@@ -87,7 +84,8 @@ void ball::DoPlaneCollisions(cushion* c)
 	for(int i=0;i<NUM_CUSHION;i++){
 		if(HasHitPlane(*(c+i))){ 
 			HitPlane(*(c+i));
-			Firework(this->CollisionPos(*(c+i)));
+			particleSetMgr* psm = particleSetMgr::Instance();
+			psm->Firework(this->CollisionPos(*(c+i)));
 		}
 	}
 }
@@ -96,7 +94,8 @@ void ball::DoBallCollision(ball &b)
 {
 	if(HasHitBall(b)){
 		HitBall(b);
-		Firework(this->CollisionPos(b));
+		particleSetMgr* psm = particleSetMgr::Instance();
+		psm->Firework(this->CollisionPos(b));
 	}
 }
 
@@ -184,34 +183,22 @@ vec2 ball::CollisionPos(const ball &b) const
 }
 
 vec2 ball::CollisionPos(const cushion &c) const
-{
-	//the vector of cushion, (P2-P1)
-	vec2 plane = c.start - c.end;
-	//the vector of sphere center to cushion's end, (P3-P1)
-	vec2 ball_to_end = position - c.end;	
-	//the rate of projected point to cushion's end over cushion'start to end
-	//LET k = |P0-P1|/|P2-P1|
-	//k = (P3-P1)*(P2-P1)/|P2-P1|
-	double k = ball_to_end.Dot(plane)/plane.Magnitude();
-	//P0 = (P2-P1)/k + P1
-	return plane/k + c.end;
-
-}
-
-void ball::Firework(vec2 position)
 {	
-	if( particle_set_index>=particle_set_num ){
-		particle_set_num *= PARTICLE_SET_SCALE;
-		particleSet *temp_particles = new particleSet[particle_set_num];
-		cout << "Newed:" << particle_set_num <<endl;
-		memcpy(temp_particles, particle_sets, sizeof(particleSet)*particle_set_index);
-		delete [] particle_sets;
-		particle_sets = temp_particles;
-	};
-	particle_sets[particle_set_index++].Initial(position);
-	cout << "Firework happend " << particle_set_index <<endl;
-	//TODO: delete [] particles
+	//the vector of cushion, (P2-P1)
+	vec2 plane = c.end - c.start;
+	//the vector of sphere center to cushion's end, (P2-P3)
+	vec2 ball_to_end = c.end - position;
+	//the rate of projected point to cushion's end over cushion'start to end
+	//LET k = |P2-P0|/|P2-P1|
+	//k = (P2-P3)*(P2-P1)/|P2-P1|
+	double k = ball_to_end.Dot(plane.Normalised())/plane.Magnitude();
+	//P0 = P2 - (P2-P1)*k
+	return c.end - plane*k;
+	
+	//return position + c.normal * radius;
+
 }
+
 
 /*-----------------------------------------------------------
   table class members
@@ -267,43 +254,43 @@ void cushion::SetPosition(double start_x, double start_y, double end_x, double e
 /*-----------------------------------------------------------
   particle class members
   -----------------------------------------------------------*/
-int particle::particleIndexCnt = 0;
 
 void particle::Reset(const vec2 start_pos){
-		position = vec3(start_pos(0), start_pos(1), radius/2);
-		velocity = vec3(random_speed(), random_speed(), random_speed());
-	};
+		position = vec3(start_pos(0), BALL_RADIUS/2.0 ,start_pos(1));
+		velocity = vec3(((rand() % 200)-100)/200.0, 2.0*((rand() % 100)/100.0), ((rand() % 200)-100)/200.0);
+};
 
 void particle::ApplyGravity(int ms){
-	vec3 velocityChange(0.0f, -(gGravityAccn * ms)/1000.0f, 0.0f);
+	//vec3 velocityChange(0.0f, -(gGravityAccn * ms)/1000.0f, 0.0f);
+	vec3 velocityChange(0.0f, -(4 * ms)/1000.0f, 0.0f);
 	velocity += velocityChange;
 }
 
 bool particle::HaveCollision(){
 	if(position(1)<0) return true;	//touch the ground
 	//TODO:Add more disappear condition
-	
+	return false;
 }
 
 void particle::Update(int ms){
-	ApplyGravity(ms);
 	position += ((velocity * ms)/1000.0f);
+	ApplyGravity(ms);
 	if(HaveCollision()) Disappear();
-	else cout << index, position(0), position(1), position(2) <<endl;
-
 }
+
 
 void particleSet::Initial(vec2 start_pos){
 		srand(time(NULL));
 		size = rand()%(MAX_PARTICLES - MIN_PARTICLES) + MIN_PARTICLES;
-		cout << size << " particles are alocated." << endl;  
-		particles = new particle[size];
+		cout << size << " particles are allocated." << endl;  
+ 		particles = new particle[size];
 		for(int i=0;i<size;i++){
 			particles[i].Reset(start_pos);
 		}
 	}
 
-bool particleSet::HasNextParticle(){
+bool particleSet::HasNextParticle()
+{
 	if(!visible) return false;
 	while(particle_index<size && !particles[particle_index].visible){
 		particle_index++;
@@ -315,10 +302,84 @@ bool particleSet::HasNextParticle(){
 		return false;
 	}
 	if(particle_index>=size) return false;
-
+	
 	return true;
 }
 
-particle particleSet::GetNextParticle(){
-	return particles[particle_index];
+particle* particleSet::GetNextParticle(){
+
+	return particles + particle_index++;
+};
+
+
+particleSetMgr* particleSetMgr::_instance = 0;
+
+
+particleSetMgr* particleSetMgr::Instance(){
+	if(_instance==0){
+		_instance = new particleSetMgr; 
+	}
+	return _instance;
+}
+
+void particleSetMgr::Firework(vec2 position)
+{	
+	if( particle_set_size>=particle_set_num ){
+		particle_set_num *= PARTICLE_SET_SCALE;
+		particleSet *temp_particles = new particleSet[particle_set_num];
+		cout << "Newed:" << particle_set_num <<endl;
+		memcpy(temp_particles, particle_sets, sizeof(particleSet)*particle_set_size);
+		delete [] particle_sets;
+		particle_sets = temp_particles;
+	};
+	particle_sets[particle_set_size++].Initial(position);
+	cout << "Firework happend " << particle_set_size <<endl;
+	
+}
+
+void particleSetMgr::Update(int ms)
+{	
+	if(particle_set_size > 0){
+		particleSet* ps;
+		particle* p;
+		for(ParticleSetBegin();HasNextParticleSet();){
+			ps = GetNextParticleSet();
+			for(ps->ParticleIteratorBegin();ps->HasNextParticle();){
+				p = ps->GetNextParticle();
+				p->Update(ms);	
+			}
+		}
+	}
+}
+
+void particleSetMgr::ParticleSetBegin()
+{
+	index = 0;
+	invisible_num = 0;
+}
+
+
+void particleSetMgr::ResetVisible(){
+	for(int i=0;i<particle_set_size;i++)
+		particle_sets[i].SetVisible();
+}
+
+bool particleSetMgr::HasNextParticleSet()
+{
+	while(index<particle_set_size && particle_sets[index].AllInvisible()){
+		index++;
+		invisible_num++;
+	}
+	if(invisible_num!=0 && invisible_num==particle_set_size){		
+		ResetVisible();
+		particle_set_size = 0;	//no need to delete, just reset the index	
+		return false;
+	}
+	if(index>=particle_set_size) return false;
+	 
+	return true;
+}
+
+particleSet* particleSetMgr::GetNextParticleSet(){
+	return particle_sets + index++;
 };

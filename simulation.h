@@ -17,11 +17,11 @@
 #define	SIM_UPDATE_MS	(10)
 #define NUM_BALLS		(7)		
 #define NUM_CUSHION		(4)
-#define MAX_PARTICLES	(10)
-#define MIN_PARTICLES	(2)
-#define MAX_SPEED		(5)
+#define MAX_PARTICLES	(100)
+#define MIN_PARTICLES	(10)
+#define MAX_SPEED		(200)
 #define PARTICLE_SET_SCALE	(2)
-#define PARTICLE_RADIUS	(0.001f)
+#define PARTICLE_RADIUS	(0.002f)
 
 /*-----------------------------------------------------------
   plane normals
@@ -51,9 +51,7 @@ public:
 
 class particle
 {
-	static int particleIndexCnt;
 private:
-	int index;
 	vec3 velocity;
 	 
 public:
@@ -61,14 +59,11 @@ public:
 	float radius;
 	bool visible;
 
-	particle():radius(PARTICLE_RADIUS), visible(true){
-		index = particleIndexCnt++;
-	};
+	particle():radius(PARTICLE_RADIUS), visible(true){};
 
-	static int random_speed(){
-		return rand() % MAX_SPEED;
+	void Disappear(){ 
+		visible = false;
 	}
-	void Disappear(){ visible = false; }
 	void Reset(const vec2);
 	void ApplyGravity(int ms);
 	void Update(int ms);
@@ -88,15 +83,16 @@ private:
 public:
 	particle *particles;
 
-	particleSet():visible(true),size(0), invisible_num(0){};
+	particleSet():visible(true),size(0){};
 	void Initial(vec2 start_pos);
 	
-	void ParticleIteratorBegin(){ particle_index = 0; }
+	void ParticleIteratorBegin(){ particle_index = 0; invisible_num = 0; }
 	bool HasNextParticle();
-	particle GetNextParticle();
+	particle* GetNextParticle();
 
 	int GetSize(){ return size;}
 	bool AllInvisible(){ return !visible; }
+	void SetVisible(){ this->visible = true; }
 };
 
 
@@ -107,10 +103,6 @@ public:
 class ball
 {
 	static int ballIndexCnt;
-private:
-	static int particle_set_num;
-	static int particle_set_index;
-
 public:
 	vec2	position;
 	vec2	velocity;
@@ -118,8 +110,6 @@ public:
 	float	mass;
 	int		index;
 	
-	static particleSet *particle_sets;
-
 	ball(): position(0.0), velocity(0.0), radius(BALL_RADIUS), 
 		mass(BALL_MASS){index = ballIndexCnt++; Reset();}
 	
@@ -138,11 +128,7 @@ public:
 
 	vec2 CollisionPos(const ball &b) const;
 	vec2 CollisionPos(const cushion &c) const;
-	void Firework(vec2 position);
-	static int GetParticleSetSize(){ return particle_set_index; }
-	void ParticleSetBegin();
-	bool HasNextParticleSet();
-	particleSet GetNextParticleSet();
+	
 };
 
 
@@ -166,8 +152,39 @@ public:
 	bool AnyBallsMoving(void) const;
 };
 
+//this class is used to manager the multiple particles' set
+//this should be a singleton
+class particleSetMgr
+{
+private:
+	int particle_set_num;	//the number of slots
+	int particle_set_size;	//the size
+	static particleSetMgr* _instance;
+	int index;
+	int invisible_num;
+
+public:
+	particleSet *particle_sets;
+
+	particleSetMgr():particle_set_num(PARTICLE_SET_SCALE), particle_set_size(0){
+	particle_sets = new particleSet[particle_set_num];
+}
+	~particleSetMgr(){ delete [] particle_sets; }
+	static particleSetMgr* Instance();
+	void Update(int ms);
+	void Firework(vec2 position);
+	void ParticleSetBegin();
+	bool HasNextParticleSet();
+	void ResetVisible();
+	particleSet* GetNextParticleSet();
+
+};
+
+
 
 /*-----------------------------------------------------------
   global table
   -----------------------------------------------------------*/
 extern table gTable;
+//extern particleSetMgr gParticleSetMgr;
+
