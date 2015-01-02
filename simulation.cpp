@@ -19,6 +19,7 @@ vec2	gPlaneNormal_Right(-1.0,0.0);
 vec2	gPlaneNormal_Bottom(0.0,-1.0);
 
 table gTable;
+game gGame;
 
 static const float gRackPositionX[] = {0.0f,0.0f,(BALL_RADIUS*2.0f),(-BALL_RADIUS*2.0f),(BALL_RADIUS*4.0f)}; 
 static const float gRackPositionZ[] = {0.5f,0.0f,(-BALL_RADIUS*3.0f),(-BALL_RADIUS*3.0f)}; 
@@ -116,9 +117,9 @@ void ball::Update(int ms)
 	if(velocity.Magnitude()<SMALL_VELOCITY) velocity = 0.0;
 }
 
-bool ball::CenterOnPocket(const pocket &p) const
+bool ball::CenterOnPocket(pocket &p) const
 {
-	if((position-p.position).Magnitude()<p.radius) return true;
+	if((position-p.GetCenter()).Magnitude()<p.GetRadius()) return true;
 	else return false;
 }
 
@@ -128,8 +129,10 @@ void ball::DropInPocket(pocket &p)
 	if(index == 0) {
 		position(0) = 0;
 		position(1) = 0.5;
+		p.punish = true;
 	}else{
 		dropped = true;
+		p.newDroptBalls++;
 	}
 }
 
@@ -257,7 +260,6 @@ void table::Update(int ms)
 		}
 	}
 	
-
 	//update all balls
 	for(int i=0;i<NUM_BALLS;i++) balls[i].Update(ms);
 }
@@ -304,7 +306,8 @@ bool cushion::InRange(vec2 position){
 /*-----------------------------------------------------------
   pocket class members
   -----------------------------------------------------------*/
-void pocket::SetPosition(vec2 v1, vec2 v2){
+void pocket::SetPosition(vec2 v1, vec2 v2)
+{
 	if(v1.elem[1]==v2.elem[1]){		//the middle pockets
 		position = (v1+v2)/2.0;
 		radius = POCKET_RADIUS;
@@ -313,4 +316,66 @@ void pocket::SetPosition(vec2 v1, vec2 v2){
 		radius = (v2-v1).Magnitude()/2;
 		std::cout << "radius:" << radius << std::endl;
 	};
+}
+
+void pocket::Reset()
+{
+	newDroptBalls = 0;
+	punish = false;
+}
+
+/*-----------------------------------------------------------
+  player class members
+  -----------------------------------------------------------*/
+int player::playerIndexCnt = 0;
+
+bool player::GetScores(pocket* p){
+	bool continueHit = false;
+	for(int i=0;i<NUM_POCKET;i++){
+		if((p+i)->punish){
+			scores -= 2;
+		};
+		if((p+i)->newDroptBalls>0){
+			scores += (p+i)->newDroptBalls;
+			continueHit = true;
+		};
+		(p+i)->Reset();
+	};
+	return continueHit;
+}
+
+
+
+/*-----------------------------------------------------------
+  game class members
+  -----------------------------------------------------------*/
+int game::NextPlayer()
+{	
+	curPlayerNo++;
+	curPlayerNo %= NUM_PLAYER;
+	return curPlayerNo;
+}
+
+void game::PrintScores()
+{
+	for(int i=0;i<NUM_PLAYER;i++){
+		std::cout << players[i].name << ": " << players[i].scores << "|";
+	}
+	std::cout << std::endl;
+}
+
+void game::Update(int ms){
+	gameTable.Update(ms);
+	bool ready = ReadyNextHit();
+
+	if(!ready) checked=false;	//allow one check between 2 hits
+	if(ready && !checked){
+		pocket* p = gameTable.pockets;
+		if(players[curPlayerNo].GetScores(p)){
+			PrintScores();
+		}else{
+			NextPlayer();
+		};
+		checked = true;
+	}
 }

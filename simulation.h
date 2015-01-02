@@ -3,6 +3,7 @@
   -----------------------------------------------------------*/
 #include <assert.h>
 #include <cmath>
+#include <string>
 #include"vecmath.h"
 
 /*-----------------------------------------------------------
@@ -19,6 +20,7 @@
 #define NUM_BALLS		(7)		
 #define NUM_CUSHION		(18)
 #define NUM_POCKET		(6)
+#define NUM_PLAYER		(2)
 #define PI				(3.14159265f)
 //the angle between vertical cushions and the cushions connected to the middle pockets
 #define MID_ANGLE	(PI/4)		
@@ -59,14 +61,23 @@ public:
 
 class pocket
 {
-public:
+private:
 	vec2 position;
 	double radius;
 
+public:
+	int newDroptBalls;
+	bool punish;
+
+	pocket():newDroptBalls(0), punish(false){
+	};
+	vec2 GetCenter(){return position;}
+	double GetRadius(){return radius;}
 	void SetPosition(vec2 vertex1, vec2 vertex2);
+	void Reset();
 };
 
-/*-----------------------------------------------------------
+/*----------------------------------------------
   ball class
   -----------------------------------------------------------*/
 
@@ -94,7 +105,7 @@ public:
 	
 	bool HasHitPlane(cushion &c) const;
 	bool HasHitBall(const ball &b) const;
-	bool CenterOnPocket(const pocket &p) const;
+	bool CenterOnPocket(pocket &p) const;
 
 	void HitPlane(cushion &c);
 	void HitBall(ball &b);
@@ -110,14 +121,60 @@ public:
 	ball balls[NUM_BALLS];	
 	cushion cushions[NUM_CUSHION];
 	pocket pockets[NUM_POCKET];
+
 	table();
 	void Update(int ms);	
 	bool AnyBallsMoving(void) const;
 };
 
 
+/*-----------------------------------------------------------
+  player class
+  -----------------------------------------------------------*/
+class player
+{
+	static int playerIndexCnt;
+public:
+	std::string name;
+	int scores;
+	int index;
+
+	player():scores(0){
+		index = playerIndexCnt++;
+		name = "Player" + char(index);
+	}
+	bool GetScores(pocket* p);
+
+};
 
 /*-----------------------------------------------------------
   global table
   -----------------------------------------------------------*/
 extern table gTable;
+
+
+/*-----------------------------------------------------------
+  game class
+  -----------------------------------------------------------*/
+class game
+{
+public:
+	player players[NUM_PLAYER];
+	int totalScores;
+	table& gameTable;
+	int curPlayerNo;	//current playing player index
+	bool checked;
+
+	game():gameTable(gTable), totalScores(0), curPlayerNo(0), checked(true){
+	
+	}
+	int NextPlayer();
+	bool ReadyNextHit(){
+		return !gameTable.AnyBallsMoving();
+	}
+	void Update(int ms);
+	void PrintScores(void);
+};
+
+extern game gGame;
+

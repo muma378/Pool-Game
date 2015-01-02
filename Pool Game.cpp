@@ -2,9 +2,9 @@
 //
 
 #include "stdafx.h"
+#include "simulation.h"
 #include<glut.h>
 #include<math.h>
-#include"simulation.h"
 
 //cue variables
 float gCueAngle = 0.0;
@@ -183,7 +183,7 @@ void RenderScene(void) {
 
 	//draw pockets
 	for(int i=0;i<NUM_POCKET;i++){
-		DrawCircle(gTable.pockets[i].position, gTable.pockets[i].radius, 50);
+		DrawCircle(gTable.pockets[i].GetCenter(), gTable.pockets[i].GetRadius(), 50);
 	} 
 
 	//draw the cue
@@ -405,7 +405,7 @@ void InitLights(void)
 
 void UpdateScene(int ms) 
 {
-	if(gTable.AnyBallsMoving()==false) gDoCue = true;
+	if(gGame.ReadyNextHit()) gDoCue = true;
 	else gDoCue = false;
 
 	if(gDoCue)
@@ -423,7 +423,7 @@ void UpdateScene(int ms)
 
 	DoCamera(ms);
 
-	gTable.Update(ms);
+	gGame.Update(ms);
 
 	glutTimerFunc(SIM_UPDATE_MS, UpdateScene, SIM_UPDATE_MS);
 	glutPostRedisplay();
