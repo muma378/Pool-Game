@@ -212,7 +212,6 @@ void ball::HitBall(ball &b)
 table::table(){	
 		double MID_OFFSET = OFFSET(MID_ANGLE) + POCKET_RADIUS;
 		double COR_OFFSET = OFFSET(COR_ANGLE);
-		std::cout << MID_OFFSET << " "<< COR_OFFSET;
 		double X[] = {TABLE_X-COR_OFFSET, TABLE_X, TABLE_X+CUSHION_THICK};
 		double Z[] = {POCKET_RADIUS, POCKET_RADIUS+CUSHION_THICK, TABLE_Z-COR_OFFSET, TABLE_Z, TABLE_Z+CUSHION_THICK};
 		double points[6][4][2] = {
@@ -237,9 +236,10 @@ table::table(){
 			pockets[i].SetPosition(cushions[last_cushion].end, cushions[last_cushion+1].start);
 		}
 
+		/*
 		for(int i=0;i<NUM_CUSHION;i++){
 			std::cout << cushions[i].start.elem[0] << "|" <<cushions[i].start.elem[1] <<	"+" << cushions[i].end.elem[0] << "|" << cushions[i].end.elem[1] << "==" << cushions[i].normal.elem[0] << "|" << cushions[i].normal.elem[1] << std::endl;
-		};
+		};*/
 	}
 
 
@@ -314,7 +314,7 @@ void pocket::SetPosition(vec2 v1, vec2 v2)
 	}else{							//the corner pockets
 		position = (v1+v2)/2.0;
 		radius = (v2-v1).Magnitude()/2;
-		std::cout << "radius:" << radius << std::endl;
+		//std::cout << "radius:" << radius << std::endl;
 	};
 }
 
@@ -329,19 +329,24 @@ void pocket::Reset()
   -----------------------------------------------------------*/
 int player::playerIndexCnt = 0;
 
-bool player::GetScores(pocket* p){
-	bool continueHit = false;
+int player::GetScores(pocket* p){
+	continueHit = false;
+	printScores = false;
+	int temp_scores = 0;
 	for(int i=0;i<NUM_POCKET;i++){
 		if((p+i)->punish){
 			scores -= 2;
+			printScores = true;
 		};
 		if((p+i)->newDroptBalls>0){
-			scores += (p+i)->newDroptBalls;
+			temp_scores += (p+i)->newDroptBalls;
 			continueHit = true;
+			printScores = true;
 		};
 		(p+i)->Reset();
 	};
-	return continueHit;
+	scores += temp_scores;
+	return temp_scores;
 }
 
 
@@ -366,16 +371,32 @@ void game::PrintScores()
 
 void game::Update(int ms){
 	gameTable.Update(ms);
-	bool ready = ReadyNextHit();
 
-	if(!ready) checked=false;	//allow one check between 2 hits
+	//allow one check between 2 hits
+	bool ready = ReadyNextHit();
+	if(!ready) checked=false;	
 	if(ready && !checked){
 		pocket* p = gameTable.pockets;
-		if(players[curPlayerNo].GetScores(p)){
+		totalScores += players[curPlayerNo].GetScores(p);
+		if(players[curPlayerNo].printScores){
 			PrintScores();
-		}else{
+		};
+		if(GameOver()){
+			player winner = players[0];
+			for(int i=1;i<NUM_PLAYER;i++){
+				if(winner.scores < players[i].scores) winner=players[i];
+			}
+			std::cout << "Congratulation! " << winner.name << " won in the game!";
+		}
+		if(!players[curPlayerNo].continueHit){
 			NextPlayer();
 		};
 		checked = true;
 	}
+}
+
+bool game::GameOver()
+{
+	if(totalScores==NUM_BALLS-1) return true;	//without the white ball
+	else return false;
 }

@@ -3,6 +3,7 @@
   -----------------------------------------------------------*/
 #include <assert.h>
 #include <cmath>
+#include <sstream>
 #include <string>
 #include"vecmath.h"
 
@@ -138,13 +139,17 @@ public:
 	std::string name;
 	int scores;
 	int index;
+	bool continueHit;
+	bool printScores;
 
-	player():scores(0){
+	player():scores(0), continueHit(false), printScores(false){
+		std::ostringstream convert;
 		index = playerIndexCnt++;
-		name = "Player" + char(index);
+		convert << index;
+		name = "Player" + convert.str();
 	}
-	bool GetScores(pocket* p);
-
+	int GetScores(pocket* p);
+	
 };
 
 /*-----------------------------------------------------------
@@ -174,6 +179,7 @@ public:
 	}
 	void Update(int ms);
 	void PrintScores(void);
+	bool GameOver();
 };
 
 extern game gGame;
