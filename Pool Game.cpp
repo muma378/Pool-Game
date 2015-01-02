@@ -125,6 +125,22 @@ void DoCamera(int ms)
 }
 
 
+void DrawCircle(vec2 p, double r, int num_segments)
+{
+    glBegin(GL_LINE_LOOP);
+    for(int ii = 0; ii < num_segments; ii++)
+    {
+        float theta = 2.0f * PI * float(ii) / float(num_segments);//get the current angle
+
+        float x = r * cosf(theta);//calculate the x component
+        float y = r * sinf(theta);//calculate the y component
+
+		glVertex3f(x + p.elem[0], 0.0, y + p.elem[1]);//output vertex
+
+    }
+    glEnd();
+}
+
 void RenderScene(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -135,7 +151,10 @@ void RenderScene(void) {
 	//draw the ball
 	glColor3f(1.0,1.0,1.0);
 	for(int i=0;i<NUM_BALLS;i++)
-	{
+	{	
+		if(gTable.balls[i].dropped){
+			continue;
+		}
 		glPushMatrix();
 		glTranslatef(gTable.balls[i].position(0),(BALL_RADIUS/2.0),gTable.balls[i].position(1));
 		#if DRAW_SOLID
@@ -162,6 +181,11 @@ void RenderScene(void) {
 		glEnd();
 	}
 
+	//draw pockets
+	for(int i=0;i<NUM_POCKET;i++){
+		DrawCircle(gTable.pockets[i].position, gTable.pockets[i].radius, 50);
+	} 
+
 	//draw the cue
 	if(gDoCue)
 	{
@@ -174,7 +198,7 @@ void RenderScene(void) {
 		glColor3f(1.0,1.0,1.0);
 		glEnd();
 	}
-
+ 
 	glPopMatrix();
 
 	glFlush();

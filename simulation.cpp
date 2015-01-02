@@ -2,6 +2,7 @@
   Simulation Source File
   -----------------------------------------------------------*/
 #include"stdafx.h"
+#include <iostream>
 #include"simulation.h"
 
 /*-----------------------------------------------------------
@@ -79,17 +80,30 @@ void ball::ApplyFrictionForce(int ms)
 
 void ball::DoPlaneCollisions(cushion* c)
 {
+	if(!dropped){
 	//test each plane for collision
 	for(int i=0;i<NUM_CUSHION;i++){
 		if(HasHitPlane(*(c+i))){ 
 			HitPlane(*(c+i));
 		}
-	}
+	}}
 }
 
 void ball::DoBallCollision(ball &b)
-{
-	if(HasHitBall(b)) HitBall(b);
+{	
+	if(!b.dropped && !dropped){
+		if(HasHitBall(b)) HitBall(b);
+	}
+}
+
+void ball::DoDropInPocket(pocket* p)
+{	
+	//test each pocket
+	if(!dropped){
+	for(int i=0;i<NUM_POCKET;i++){
+		if(CenterOnPocket(*(p+i))) DropInPocket(*(p+i));
+		}
+	}
 }
 
 void ball::Update(int ms)
@@ -102,15 +116,35 @@ void ball::Update(int ms)
 	if(velocity.Magnitude()<SMALL_VELOCITY) velocity = 0.0;
 }
 
+bool ball::CenterOnPocket(const pocket &p) const
+{
+	if((position-p.position).Magnitude()<p.radius) return true;
+	else return false;
+}
+
+void ball::DropInPocket(pocket &p)
+{
+	velocity = 0.0;
+	if(index == 0) {
+		position(0) = 0;
+		position(1) = 0.5;
+	}else{
+		dropped = true;
+	}
+}
+
 bool ball::HasHitPlane(cushion &c) const
 {
 	//if moving away from plane, cannot hit
-	if(velocity.Dot(c.normal) >= 0.0 ) return false;
+	if(velocity.Dot(c.normal) < 0.0 ){
 	//if in front of plane, then have not hit
-	if((position-(c.end)).Dot(c.normal) > 0) return false;
-	return true;
+		if(c.InRange(position)){
+			double relative_dis = (position-(c.end)).Dot(c.normal);
+			if( relative_dis < radius && relative_dis > -radius) return true;
+		}
+	}
+	return false;
 }
-
 
 bool ball::HasHitBall(const ball &b) const
 {
@@ -144,7 +178,6 @@ void ball::HitPlane(cushion &c)
 	velocity = parallel + (-perp)*gCoeffRestitution;
 }
 
-
 void ball::HitBall(ball &b)
 {
 	//find direction from other ball to this ball
@@ -173,10 +206,47 @@ void ball::HitBall(ball &b)
 /*-----------------------------------------------------------
   table class members
   -----------------------------------------------------------*/
+table::table(){	
+		double MID_OFFSET = OFFSET(MID_ANGLE) + POCKET_RADIUS;
+		double COR_OFFSET = OFFSET(COR_ANGLE);
+		std::cout << MID_OFFSET << " "<< COR_OFFSET;
+		double X[] = {TABLE_X-COR_OFFSET, TABLE_X, TABLE_X+CUSHION_THICK};
+		double Z[] = {POCKET_RADIUS, POCKET_RADIUS+CUSHION_THICK, TABLE_Z-COR_OFFSET, TABLE_Z, TABLE_Z+CUSHION_THICK};
+		double points[6][4][2] = {
+			{{-X[1], Z[4]}, {-X[0], Z[3]}, {X[0], Z[3]}, {X[1], Z[4]}},	 //upper edge
+			{{X[2], Z[3]}, {X[1], Z[2]}, {X[1], Z[1]}, {X[2], Z[0]}},		//right upper edge
+			{{X[2], -Z[0]}, {X[1], -Z[1]}, {X[1], -Z[2]}, {X[2], -Z[3]}},	//right down edge
+			{{X[1], -Z[4]}, {X[0], -Z[3]}, {-X[0], -Z[3]}, {-X[1], -Z[4]}},	  //down edge
+			{{-X[2], -Z[3]}, {-X[1], -Z[2]}, {-X[1], -Z[1]}, {-X[2], -Z[0]}},   //left down edge
+			{{-X[2], Z[0]}, {-X[1], Z[1]}, {-X[1], Z[2]}, {-X[2], Z[3]}},	   //left upper edge
+			};
+		int index = 0;
+		for(int i=0;i<CONNECTED_EDGES;i++){
+			for(int j=0;j<CONNECTED_POINTS-1;j++){
+				cushions[index++].SetPosition(points[i][j][0], points[i][j][1], points[i][j+1][0], points[i][j+1][1]);
+			};
+		};
+
+		pockets[0].SetPosition(cushions[NUM_CUSHION-1].end, cushions[0].start);
+		int last_cushion = -1;
+		for(int i=1;i<NUM_POCKET;i++){
+			last_cushion += 3;
+			pockets[i].SetPosition(cushions[last_cushion].end, cushions[last_cushion+1].start);
+		}
+
+		for(int i=0;i<NUM_CUSHION;i++){
+			std::cout << cushions[i].start.elem[0] << "|" <<cushions[i].start.elem[1] <<	"+" << cushions[i].end.elem[0] << "|" << cushions[i].end.elem[1] << "==" << cushions[i].normal.elem[0] << "|" << cushions[i].normal.elem[1] << std::endl;
+		};
+	}
+
+
 void table::Update(int ms)
 {
-	//check for collisions with planes, for all balls
-	for(int i=0;i<NUM_BALLS;i++) balls[i].DoPlaneCollisions(cushions);
+	//check for collisions with planes and pockets, for all balls
+	for(int i=0;i<NUM_BALLS;i++) {
+		balls[i].DoPlaneCollisions(cushions);
+		balls[i].DoDropInPocket(pockets);
+	}
 	
 	//check for collisions between pairs of balls
 	for(int i=0;i<NUM_BALLS;i++) 
@@ -187,6 +257,7 @@ void table::Update(int ms)
 		}
 	}
 	
+
 	//update all balls
 	for(int i=0;i<NUM_BALLS;i++) balls[i].Update(ms);
 }
@@ -202,12 +273,10 @@ bool table::AnyBallsMoving(void) const
 	return false;
 }
 
-/*-----------------------------------------------------------
-  cushion class members
-  -----------------------------------------------------------*/
+
 vec2 cushion::GetNormal(void)
 {
-	vec2 line = start - end;
+	vec2 line = end - start;
 	return vec2(line.elem[1], -line.elem[0]);
 }
 
@@ -218,4 +287,30 @@ void cushion::SetPosition(double start_x, double start_y, double end_x, double e
 	assert( s != e );
 	start = s, end = e;
 	normal = GetNormal().Normalised();
+}
+
+bool cushion::InRange(vec2 position){
+	double x = position.elem[0];
+	double y = position.elem[1];
+	if((y < start.elem[1] && y > end.elem[1]) || (y > start.elem[1] && y < end.elem[1])){
+		return true;
+	}
+	if((x < start.elem[0] && x > end.elem[0]) || (x > start.elem[0] && x < end.elem[0])){ 
+		return true;
+	}
+	return false;
+}
+
+/*-----------------------------------------------------------
+  pocket class members
+  -----------------------------------------------------------*/
+void pocket::SetPosition(vec2 v1, vec2 v2){
+	if(v1.elem[1]==v2.elem[1]){		//the middle pockets
+		position = (v1+v2)/2.0;
+		radius = POCKET_RADIUS;
+	}else{							//the corner pockets
+		position = (v1+v2)/2.0;
+		radius = (v2-v1).Magnitude()/2;
+		std::cout << "radius:" << radius << std::endl;
+	};
 }
